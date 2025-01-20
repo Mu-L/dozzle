@@ -2,16 +2,24 @@
   <section :class="{ 'h-screen min-h-0': scrollable }" class="flex flex-col">
     <header
       v-if="$slots.header"
-      class="sticky top-[70px] z-[2] border-b border-base-content/10 bg-base py-2 shadow-[1px_1px_2px_0_rgb(0,0,0,0.05)] md:top-0"
+      class="border-base-content/10 bg-base-200 sticky top-[55px] z-2 border-b py-2 shadow-[1px_1px_2px_0_rgb(0,0,0,0.05)] md:top-0"
     >
       <slot name="header"></slot>
     </header>
     <main :data-scrolling="scrollable ? true : undefined" class="snap-y overflow-auto">
-      <div class="invisible mr-28 text-right md:visible" v-show="paused">
-        <scroll-progress :indeterminate="loading" :auto-hide="!loading" class="z-2 !fixed top-16" />
+      <div class="invisible relative md:visible" v-show="scrollContext.paused">
+        <div class="absolute top-4 right-44">
+          <ScrollProgress
+            :indeterminate="loadingMore"
+            :auto-hide="!loadingMore"
+            :progress="scrollContext.progress"
+            :date="scrollContext.currentDate"
+            class="fixed! z-10 min-w-40"
+          />
+        </div>
       </div>
       <div ref="scrollableContent">
-        <slot :setLoading="setLoading"></slot>
+        <slot></slot>
       </div>
 
       <div ref="scrollObserver" class="h-px"></div>
@@ -20,12 +28,12 @@
     <div class="mr-16 text-right">
       <transition name="fade">
         <button
-          class="fixed bottom-8 rounded bg-primary p-3 text-primary-content shadow transition-colors hover:bg-primary-focus"
-          :class="hasMore ? 'animate-bounce-fast bg-secondary text-secondary-content hover:bg-secondary-focus' : ''"
+          class="transition-colorsblur-xs dark btn btn-primary text-primary-content fixed bottom-8 rounded-sm p-3 shadow-sm"
+          :class="hasMore ? 'btn-secondary animate-bounce-fast text-secondary-content' : ''"
           @click="scrollToBottom()"
-          v-show="paused"
+          v-show="scrollContext.paused"
         >
-          <mdi:light-chevron-double-down />
+          <mdi:chevron-double-down />
         </button>
       </transition>
     </div>
@@ -35,46 +43,41 @@
 <script lang="ts" setup>
 const { scrollable = false } = defineProps<{ scrollable?: boolean }>();
 
-let paused = $ref(false);
-let hasMore = $ref(false);
-let loading = $ref(false);
+const hasMore = ref(false);
 const scrollObserver = ref<HTMLElement>();
 const scrollableContent = ref<HTMLElement>();
 
-provide("scrollingPaused", $$(paused));
+const scrollContext = provideScrollContext();
 
-const mutationObserver = new MutationObserver((e) => {
-  if (!paused) {
-    scrollToBottom();
-  } else {
-    const record = e[e.length - 1];
-    const children = (record.target as HTMLElement).children;
-    if (children[children.length - 1] == record.addedNodes[record.addedNodes.length - 1]) {
-      hasMore = true;
-    }
-  }
-});
+const { loadingMore } = useLoggingContext();
 
-const intersectionObserver = new IntersectionObserver((entries) => (paused = entries[0].intersectionRatio == 0), {
+useIntersectionObserver(scrollObserver, ([entry]) => (scrollContext.paused = entry.intersectionRatio == 0), {
   threshold: [0, 1],
-  rootMargin: "80px 0px",
+  rootMargin: "40px 0px",
 });
 
-onMounted(() => {
-  mutationObserver.observe(scrollableContent.value!, { childList: true, subtree: true });
-  intersectionObserver.observe(scrollObserver.value!);
-});
+useMutationObserver(
+  scrollableContent,
+  (records) => {
+    if (!scrollContext.paused) {
+      scrollToBottom();
+    } else {
+      const record = records[records.length - 1];
+      const children = (record.target as HTMLElement).children;
+      if (children[children.length - 1] == record.addedNodes[record.addedNodes.length - 1]) {
+        hasMore.value = true;
+      }
+    }
+  },
+  { childList: true, subtree: true },
+);
 
 function scrollToBottom(behavior: "auto" | "smooth" = "auto") {
   scrollObserver.value?.scrollIntoView({ behavior });
-  hasMore = false;
-}
-
-function setLoading(value: boolean) {
-  loading = value;
+  hasMore.value = false;
 }
 </script>
-<style scoped lang="postcss">
+<style scoped>
 .fade-enter-active,
 .fade-leave-active {
   @apply transition-opacity;

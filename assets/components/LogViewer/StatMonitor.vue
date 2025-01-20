@@ -1,12 +1,12 @@
 <template>
-  <div class="relative hover:text-secondary" @mouseenter="mouseOver = true" @mouseleave="mouseOver = false">
-    <div class="mobile-hidden flex overflow-hidden rounded-sm border border-primary px-px pb-px pt-1">
-      <stat-sparkline :data="data" @selected-point="onSelectedPoint"></stat-sparkline>
+  <div class="hover:text-secondary relative" @mouseenter="mouseOver = true" @mouseleave="mouseOver = false">
+    <div class="border-primary hidden overflow-hidden rounded-xs border px-px pt-1 pb-px md:flex">
+      <StatSparkline :data="data" @selected-point="onSelectedPoint" />
     </div>
-    <div class="inline-flex gap-1 rounded bg-base p-px text-xs lg:absolute lg:-left-0.5 lg:-top-2">
+    <div class="bg-base-200 inline-flex gap-1 rounded-sm p-px text-xs md:absolute md:-top-2 md:-left-0.5">
       <div class="font-light uppercase">{{ label }}</div>
-      <div class="select-none font-bold">
-        {{ mouseOver ? selectedPoint?.value ?? selectedPoint?.y ?? statValue : statValue }}
+      <div class="font-bold select-none">
+        {{ mouseOver ? (selectedPoint?.value ?? selectedPoint?.y ?? statValue) : statValue }}
       </div>
     </div>
   </div>

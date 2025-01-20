@@ -1,3 +1,8 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  include: stat;
+}
+
 /**
  * Customize default theme styling by overriding CSS variables:
  * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
@@ -145,19 +150,17 @@
 
 .VPHomeHero .name {
   @apply text-7xl font-light;
-  font-family: "Playfair Display", serif;
 }
 
 .VPNavBarTitle .title {
   @apply text-3xl font-light;
-  color: var(--bar-title-color);
-  font-family: "Playfair Display", serif;
+  text-transform: uppercase;
 }
 
 .VPHero .container .image {
   max-width: 1200px;
 }
 
-.home .VPNav .container {
+.VPNavBar.home .container {
   max-width: 100%;
 }

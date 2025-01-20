@@ -1,7 +1,7 @@
 <template>
-  <tag size="small" :std="std">
+  <Tag size="small" :std="std" class="items-start!">
     {{ std }}
-  </tag>
+  </Tag>
 </template>
 
 <script lang="ts" setup>
@@ -12,7 +12,8 @@ defineProps<{
 }>();
 </script>
 
-<style lang="postcss" scoped>
+<style scoped>
+@import "@/main.css" reference;
 [std="stdout"] {
   @apply text-blue;
 }

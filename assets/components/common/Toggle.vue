@@ -1,12 +1,14 @@
 <template>
-  <label class="label inline-flex cursor-pointer gap-4 font-normal">
-    <input type="checkbox" class="toggle toggle-primary hover:bg-primary-focus" v-model="modelValue" />
-    <slot />
-  </label>
+  <LabeledInput>
+    <template #label>
+      <slot />
+    </template>
+    <template #input>
+      <input type="checkbox" class="toggle toggle-primary" v-model="modelValue" v-bind="$attrs" />
+    </template>
+  </LabeledInput>
 </template>
 
 <script lang="ts" setup>
-const { modelValue } = defineModels<{
-  modelValue: boolean;
-}>();
+const modelValue = defineModel<boolean>();
 </script>

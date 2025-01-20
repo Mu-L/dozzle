@@ -3,6 +3,7 @@
 </template>
 
 <script lang="ts" setup>
+const mode = useColorMode();
 watchEffect(() => {
   if (smallerScrollbars.value) {
     document.documentElement.classList.add("has-custom-scrollbars");
@@ -10,19 +11,14 @@ watchEffect(() => {
     document.documentElement.classList.remove("has-custom-scrollbars");
   }
 
-  switch (lightTheme.value) {
-    case "dark":
-      document.documentElement.setAttribute("data-theme", "dark");
-      break;
-    case "light":
-      document.documentElement.setAttribute("data-theme", "light");
-      break;
-    default:
-      document.documentElement.removeAttribute("data-theme");
+  let theme = lightTheme.value;
+  if (theme === "auto") {
+    theme = mode.value;
   }
+  document.documentElement.setAttribute("data-theme", theme);
 });
 </script>
-<style lang="postcss">
+<style>
 html.has-custom-scrollbars {
   ::-webkit-scrollbar {
     width: 8px;
