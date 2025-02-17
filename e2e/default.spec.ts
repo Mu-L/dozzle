@@ -9,10 +9,7 @@ test("has right title", async ({ page }) => {
 });
 
 test("has dashboard text", async ({ page }) => {
-  await expect(page.getByText("Total Containers")).toBeVisible();
-  await expect(page.getByText("Total CPU Usage")).toBeVisible();
-  await expect(page.getByText("Total Mem Usage")).toBeVisible();
-  await expect(page.getByText("Dozzle Version")).toBeVisible();
+  await expect(page.getByText("container name")).toBeVisible();
 });
 
 test("click on settings button", async ({ page }) => {
@@ -34,6 +31,6 @@ test.describe("es locale", () => {
   test.use({ locale: "es" });
 
   test("translated text", async ({ page }) => {
-    await expect(page.getByTestId("containers")).toHaveText("Contenedores");
+    await expect(page.getByTestId("search")).toContainText("Buscar");
   });
 });

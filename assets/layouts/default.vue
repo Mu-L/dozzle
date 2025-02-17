@@ -1,40 +1,44 @@
 <template>
-  <div v-if="!authorizationNeeded">
-    <mobile-menu v-if="isMobile" @search="showFuzzySearch"></mobile-menu>
-    <splitpanes @resized="onResized($event)">
-      <pane min-size="10" :size="menuWidth" v-if="!isMobile && !collapseNav">
-        <side-panel @search="showFuzzySearch"></side-panel>
-      </pane>
-      <pane min-size="10">
-        <splitpanes>
-          <pane class="router-view min-h-screen">
+  <div>
+    <mobile-menu v-if="isMobile && !forceMenuHidden" @search="showFuzzySearch"></mobile-menu>
+    <Splitpanes @resized="onResized($event)">
+      <Pane min-size="10" :size="menuWidth" v-if="!isMobile && !collapseNav && !forceMenuHidden">
+        <SidePanel @search="showFuzzySearch" />
+      </Pane>
+      <Pane min-size="10">
+        <Splitpanes>
+          <Pane class="router-view min-h-screen">
             <router-view></router-view>
-          </pane>
+          </Pane>
           <template v-if="!isMobile">
-            <pane v-for="other in activeContainers" :key="other.id">
-              <log-container
+            <Pane v-for="other in pinnedLogs" :key="other.id">
+              <ContainerLog
                 :id="other.id"
                 show-title
                 scrollable
                 closable
-                @close="containerStore.removeActiveContainer(other)"
-              ></log-container>
-            </pane>
+                @close="pinnedLogsStore.unPinContainer(other)"
+              />
+            </Pane>
           </template>
-        </splitpanes>
-      </pane>
-    </splitpanes>
+        </Splitpanes>
+      </Pane>
+    </Splitpanes>
     <label
-      class="btn btn-circle swap swap-rotate fixed bottom-8 left-4"
-      :class="{ '!-left-3': collapseNav }"
-      v-if="!isMobile"
+      class="btn btn-circle swap bg-base-100 swap-rotate fixed bottom-4 -left-12 w-16 transition-all hover:-left-4"
+      :class="{ '-left-6!': collapseNav }"
+      v-if="!isMobile && !forceMenuHidden"
     >
       <input type="checkbox" v-model="collapseNav" />
-      <mdi:light-chevron-right class="swap-on text-secondary" />
-      <mdi:light-chevron-left class="swap-off" />
+      <mdi:chevron-right class="swap-on" />
+      <mdi:chevron-left class="swap-off" />
     </label>
   </div>
-  <dialog ref="modal" class="modal items-start bg-white/20 backdrop:backdrop-blur-sm" @close="open = false">
+  <dialog
+    ref="modal"
+    class="modal items-start bg-white/20 transition-none backdrop:backdrop-blur-xs"
+    @close="open = false"
+  >
     <div class="modal-box max-w-2xl bg-transparent pt-20 shadow-none">
       <FuzzySearchModal @close="open = false" v-if="open" />
     </div>
@@ -42,39 +46,31 @@
       <button>close</button>
     </form>
   </dialog>
-  <div class="toast toast-end whitespace-normal">
-    <div
-      class="alert max-w-xl"
-      v-for="toast in toasts"
-      :key="toast.id"
-      :class="{ 'alert-error': toast.type === 'error', 'alert-info': toast.type === 'info' }"
-    >
-      <carbon:information class="h-6 w-6 shrink-0 stroke-current" v-if="toast.type === 'info'" />
-      <carbon:warning class="h-6 w-6 shrink-0 stroke-current" v-else-if="toast.type === 'error'" />
-      <div>
-        <h3 class="text-lg font-bold" v-if="toast.title">{{ toast.title }}</h3>
-        {{ toast.message }}
-      </div>
-      <div>
-        <button class="btn btn-circle btn-xs" @click="removeToast(toast.id)"><mdi:close /></button>
-      </div>
-    </div>
-  </div>
+  <SideDrawer ref="drawer" :width="drawerWidth">
+    <Suspense :timeout="0">
+      <component :is="drawerComponent" v-bind="drawerProperties" />
+      <template #fallback> Loading dependencies... </template>
+    </Suspense>
+  </SideDrawer>
+  <ToastModal />
 </template>
 
 <script lang="ts" setup>
 // @ts-ignore - splitpanes types are not available
 import { Splitpanes, Pane } from "splitpanes";
-import { collapseNav } from "@/composables/settings";
-const { authorizationNeeded } = config;
+import { collapseNav } from "@/stores/settings";
+import SideDrawer from "@/components/common/SideDrawer.vue";
 
-const containerStore = useContainerStore();
-const { activeContainers } = storeToRefs(containerStore);
+const pinnedLogsStore = usePinnedLogsStore();
+const { pinnedLogs } = storeToRefs(pinnedLogsStore);
 
-const { toasts, removeToast } = useToast();
+const drawer = useTemplateRef<InstanceType<typeof SideDrawer>>("drawer") as Ref<InstanceType<typeof SideDrawer>>;
+const { component: drawerComponent, properties: drawerProperties, width: drawerWidth } = createDrawer(drawer);
 
 const modal = ref<HTMLDialogElement>();
 const open = ref(false);
+const searchParams = new URLSearchParams(window.location.search);
+const forceMenuHidden = ref(searchParams.has("hideMenu"));
 
 watch(open, () => {
   if (open.value) {
@@ -102,9 +98,11 @@ function onResized(e: any) {
 }
 </script>
 
-<style scoped lang="postcss">
+<style scoped>
+@import "@/main.css" reference;
+
 :deep(.splitpanes--vertical > .splitpanes__splitter) {
-  @apply min-w-[3px] bg-base-lighter hover:bg-secondary;
+  @apply bg-base-100 hover:bg-secondary min-w-[3px];
 }
 
 @media screen and (max-width: 768px) {

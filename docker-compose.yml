@@ -1,37 +1,36 @@
-version: "3.4"
 services:
   custom_base:
     container_name: custom_base
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - DOZZLE_FILTER=name=custom_base
       - DOZZLE_BASE=/foobarbase
       - DOZZLE_NO_ANALYTICS=1
+      - DOZZLE_HOSTNAME=custom name
     ports:
       - 8080:8080
     build:
       context: .
-  auth:
-    container_name: auth
+  simple-auth:
+    container_name: simple-auth
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./e2e/data:/data
     environment:
-      - DOZZLE_FILTER=name=auth
-      - DOZZLE_USERNAME=foo
-      - DOZZLE_PASSWORD=bar
+      - DOZZLE_AUTH_PROVIDER=simple
       - DOZZLE_NO_ANALYTICS=1
-    ports:
-      - 9090:8080
     build:
       context: .
   dozzle:
     container_name: dozzle
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - DOZZLE_FILTER=name=dozzle
       - DOZZLE_NO_ANALYTICS=1
+      - DOZZLE_HOSTNAME=localhost
+      - DOZZLE_LEVEL=debug
     ports:
       - 7070:8080
     build:
@@ -39,7 +38,7 @@ services:
   remote:
     container_name: remote
     environment:
-      - DOZZLE_REMOTE_HOST=tcp://proxy:2375
+      - DOZZLE_REMOTE_HOST=tcp://proxy:2375|remote-host
       - DOZZLE_FILTER=name=dozzle
       - DOZZLE_NO_ANALYTICS=1
     ports:
@@ -47,21 +46,56 @@ services:
     build:
       context: .
     depends_on:
-      - proxy
-
+      proxy:
+        condition: service_healthy
+  dozzle-with-agent:
+    container_name: with-agent
+    environment:
+      - DOZZLE_REMOTE_AGENT=agent:7007
+      - DOZZLE_NO_ANALYTICS=1
+      - DOZZLE_LEVEL=debug
+    ports:
+      - 8082:8080
+    build:
+      context: .
+    depends_on:
+      agent:
+        condition: service_healthy
+  agent:
+    container_name: agent
+    command: agent
+    environment:
+      - DOZZLE_FILTER=name=dozzle
+      - DOZZLE_NO_ANALYTICS=1
+    healthcheck:
+      test: ["CMD", "/dozzle", "healthcheck"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+      start_interval: 5s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    build:
+      context: .
   proxy:
     container_name: proxy
     image: tecnativa/docker-socket-proxy
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - CONTAINERS=1
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "2375"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+      start_interval: 5s
     ports:
       - 2375:2375
 
   playwright:
     container_name: playwright
-    image: mcr.microsoft.com/playwright:v1.39.0-jammy
+    image: mcr.microsoft.com/playwright:v1.50.1-jammy
     working_dir: /app
     volumes:
       - .:/app
@@ -72,5 +106,4 @@ services:
     depends_on:
       - dozzle
       - custom_base
-      - auth
       - remote

@@ -3,14 +3,16 @@ import { Ref, UnwrapNestedRefs } from "vue";
 import type { ContainerHealth, ContainerJson, ContainerStat } from "@/types/Container";
 import { Container } from "@/models/Container";
 import i18n from "@/modules/i18n";
+import { Host } from "./hosts";
 
-const { showToast } = useToast();
+const { showToast, removeToast } = useToast();
+const { updateHost } = useHosts();
 // @ts-ignore
 const { t } = i18n.global;
 
 export const useContainerStore = defineStore("container", () => {
   const containers: Ref<Container[]> = ref([]);
-  const activeContainerIds: Ref<string[]> = ref([]);
+
   let es: EventSource | null = null;
   const ready = ref(false);
 
@@ -29,14 +31,12 @@ export const useContainerStore = defineStore("container", () => {
     return containers.value.filter(filter);
   });
 
-  const activeContainers = computed(() => activeContainerIds.value.map((id) => allContainersById.value[id]));
-
   function connect() {
     es?.close();
     ready.value = false;
-    es = new EventSource(`${config.base}/api/events/stream`);
+    es = new EventSource(withBase("/api/events/stream"));
     es.addEventListener("error", (e) => {
-      if (es?.readyState === EventSource.CLOSED) {
+      if (es?.readyState === EventSource.CONNECTING) {
         showToast(
           {
             id: "events-stream",
@@ -60,12 +60,37 @@ export const useContainerStore = defineStore("container", () => {
         container.updateStat(rest);
       }
     });
-    es.addEventListener("container-die", (e) => {
-      const event = JSON.parse((e as MessageEvent).data) as { actorId: string };
+    es.addEventListener("container-event", (e) => {
+      const event = JSON.parse((e as MessageEvent).data) as { actorId: string; name: string; time: string };
       const container = allContainersById.value[event.actorId];
       if (container) {
-        container.state = "dead";
+        switch (event.name) {
+          case "die":
+            container.state = "exited";
+            container.finishedAt = new Date(event.time);
+            break;
+          case "destroy":
+            container.state = "deleted";
+            break;
+        }
       }
+    });
+
+    es.addEventListener("container-updated", (e) => {
+      const container = JSON.parse((e as MessageEvent).data) as ContainerJson;
+      const existing = allContainersById.value[container.id];
+      if (existing) {
+        existing.name = container.name;
+        existing.state = container.state;
+        existing.health = container.health;
+        existing.startedAt = new Date(container.startedAt);
+        existing.finishedAt = new Date(container.finishedAt);
+      }
+    });
+
+    es.addEventListener("update-host", (e) => {
+      const host = JSON.parse((e as MessageEvent).data) as Host;
+      updateHost(host);
     });
 
     es.addEventListener("container-health", (e) => {
@@ -77,6 +102,7 @@ export const useContainerStore = defineStore("container", () => {
     });
 
     es.onopen = () => {
+      removeToast("events-stream");
       if (containers.value.length > 0) {
         containers.value = [];
       }
@@ -109,9 +135,9 @@ export const useContainerStore = defineStore("container", () => {
 
     existingContainers.forEach((c) => {
       const existing = allContainersById.value[c.id];
-      existing.status = c.status;
       existing.state = c.state;
       existing.health = c.health;
+      existing.name = c.name;
     });
 
     containers.value = [
@@ -119,13 +145,17 @@ export const useContainerStore = defineStore("container", () => {
       ...newContainers.map((c) => {
         return new Container(
           c.id,
-          new Date(c.created * 1000),
+          new Date(c.created),
+          new Date(c.startedAt),
+          new Date(c.finishedAt),
           c.image,
           c.name,
           c.command,
           c.host,
-          c.status,
+          c.labels,
           c.state,
+          c.stats,
+          c.group,
           c.health,
         );
       }),
@@ -133,19 +163,40 @@ export const useContainerStore = defineStore("container", () => {
   };
 
   const currentContainer = (id: Ref<string>) => computed(() => allContainersById.value[id.value]);
-  const appendActiveContainer = ({ id }: { id: string }) => activeContainerIds.value.push(id);
-  const removeActiveContainer = ({ id }: { id: string }) =>
-    activeContainerIds.value.splice(activeContainerIds.value.indexOf(id), 1);
+
+  const containerNames = computed(() =>
+    containers.value.reduce(
+      (acc, container) => {
+        acc[container.id] = container.name;
+        return acc;
+      },
+      {} as Record<string, string>,
+    ),
+  );
+
+  const findContainerById = (id: string) => allContainersById.value[id];
+
+  const containersByHost = computed(() =>
+    containers.value.reduce(
+      (acc, container) => {
+        if (!acc[container.host]) {
+          acc[container.host] = [];
+        }
+        acc[container.host].push(container);
+        return acc;
+      },
+      {} as Record<string, Container[]>,
+    ),
+  );
 
   return {
     containers,
-    activeContainerIds,
     allContainersById,
+    containersByHost,
     visibleContainers,
-    activeContainers,
     currentContainer,
-    appendActiveContainer,
-    removeActiveContainer,
+    findContainerById,
+    containerNames,
     ready,
   };
 });

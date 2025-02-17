@@ -1,7 +1,7 @@
 <template>
-  <tag size="small">
-    <date-time :date="date" class="whitespace-nowrap text-blue"></date-time>
-  </tag>
+  <Tag size="small" class="items-start!">
+    <DateTime :date="date" class="text-blue whitespace-nowrap" />
+  </Tag>
 </template>
 <script lang="ts" setup>
 defineProps<{

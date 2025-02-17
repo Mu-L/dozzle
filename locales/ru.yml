@@ -1,11 +1,15 @@
 toolbar:
   clear: Очистить
+  show-hostname: Показать имя хоста
+  show-container-name: Показать имя контейнера
   download: Скачать
   search: Поиск
   show: Показать только {std}
   show-all: Показать все потоки
 label:
   containers: Контейнеры
+  running-containers: Запущенные контейнеры
+  all-containers: Все контейнеры
   total-containers: Всего Контейнеров
   running: Запущенные
   total-cpu-usage: Использование процессора
@@ -13,6 +17,7 @@ label:
   dozzle-version: Версия Dozzle
   all: Все
   host: Хост
+  hosts: Хосты
   password: Пароль
   username: Имя пользователя
   container-name: Имя контейнера
@@ -20,6 +25,9 @@ label:
   created: Создан
   avg-cpu: средний процессор (%)
   avg-mem: средняя память (%)
+  host-menu: Хосты и Контейнеры
+  swarm-menu: Сервисы и Стеки
+  group-menu: Пользовательские Группы
 tooltip:
   search: Поиск контейнеров (⌘ + k, ⌃k)
   pin-column: Закрепить столбец
@@ -56,8 +64,10 @@ button:
   settings: Настройки
 placeholder:
   search-containers: Поиск контейнеров (⌘ + k, ⌃k)
+  search: Поиск
 settings:
   display: Вид
+  locale: Язык
   small-scrollbars: Уменьшенная полоса прокрутки
   show-timesamps: Показывать временные метки
   soft-wrap: Плавный перенос текста
@@ -67,6 +77,7 @@ settings:
   color-scheme: Цветовая схема
   options: Опции
   show-stopped-containers: Показывать остановленные контейнеры
+  datetime-format: Формат даты и времени
   about: Информация
   search: Включить поиск с помощью Dozzle, используя
   using-version: Вы используете версию Dozzle {version}.
@@ -74,3 +85,13 @@ settings:
     Доступна новая версия! Обновить до <a href="{href}" target="_blank" rel="noreferrer noopener">{nextVersion}</a>.
   show-std: Показывать метки stdout и stderr
   automatic-redirect: Автоматическое перенаправление на новые контейнеры с тем же именем.
+  compact: Компактный режим
+  log:
+    preview: Это предварительный просмотр логов
+    warning: Так выглядит лог предупреждения
+    complex: Это сложная запись лога в формате json
+    simple: Это очень длинное сообщение, которое по умолчанию переносится. Отключение мягкого переноса отключит это. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+    multi-line-error:
+      start-line: Это многострочное сообщение об ошибке
+      middle-line: со второй строкой
+      end-line: и наконец третьей строкой.
