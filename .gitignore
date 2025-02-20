@@ -1,4 +1,5 @@
 certs
+/data
 dist
 node_modules
 .cache
@@ -11,3 +12,6 @@ coverage.out
 /test-results/
 /playwright-report/
 /playwright/.cache/
+*.pem
+*.csr
+tmp

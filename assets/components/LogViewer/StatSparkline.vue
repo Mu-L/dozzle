@@ -1,7 +1,7 @@
 <template>
   <svg :width="width" :height="height" @mousemove="onMove" class="group">
     <path :d="path" class="fill-primary" />
-    <line :x1="lineX" y1="0" :x2="lineX" :y2="height" class="invisible stroke-secondary stroke-2 group-hover:visible" />
+    <line :x1="lineX" y1="0" :x2="lineX" :y2="height" class="stroke-secondary invisible stroke-2 group-hover:visible" />
   </svg>
 </template>
 
@@ -12,7 +12,7 @@ import { area, curveStep } from "d3-shape";
 
 const d3 = { extent, scaleLinear, area, curveStep };
 const { data, width = 150, height = 30 } = defineProps<{ data: Point<unknown>[]; width?: number; height?: number }>();
-const x = d3.scaleLinear().range([width, 0]);
+const x = d3.scaleLinear().range([0, width]);
 const y = d3.scaleLinear().range([height, 0]);
 
 const selectedPoint = defineEmit<[value: Point<unknown>]>();

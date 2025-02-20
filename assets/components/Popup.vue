@@ -4,7 +4,7 @@
     <transition name="fade">
       <div
         v-show="show && (delayedShow || glopbalShow)"
-        class="fixed z-50 rounded border border-secondary/50 bg-base-lighter p-4 shadow"
+        class="border-base-content/20 bg-base-100 fixed z-50 rounded-sm border p-4 shadow-sm"
         ref="content"
       >
         <slot name="content"></slot>
@@ -14,24 +14,24 @@
 </template>
 
 <script lang="ts" setup>
-import { globalShowPopup } from "@/composables/popup";
+import { globalShowPopup } from "@/composable/popup";
 
-let glopbalShow = globalShowPopup();
-let show = ref(glopbalShow.value);
-let delayedShow = refDebounced(show, 1000);
-
-let content: HTMLElement | null = $ref(null);
+const glopbalShow = globalShowPopup();
+const show = ref(glopbalShow.value);
+const delayedShow = refDebounced(show, 1000);
+const content = ref<HTMLElement>();
 
 const onMouseEnter = (e: Event) => {
   show.value = true;
   glopbalShow.value = true;
-  if (e.target && content && e.target instanceof Element) {
+
+  if (content.value && e.target instanceof HTMLElement) {
     const { left, top, width } = e.target.getBoundingClientRect();
     const x = left + width + 10;
     const y = top;
 
-    content.style.left = `${x}px`;
-    content.style.top = `${y}px`;
+    content.value.style.left = `${x}px`;
+    content.value.style.top = `${y}px`;
   }
 };
 
@@ -40,12 +40,12 @@ const onMouseLeave = () => {
   glopbalShow.value = false;
 };
 
-const el = useCurrentElement();
+const el: Ref<HTMLElement> = useCurrentElement();
 useEventListener(() => el.value?.nextElementSibling, "mouseenter", onMouseEnter);
 useEventListener(() => el.value?.nextElementSibling, "mouseleave", onMouseLeave);
 </script>
 
-<style scoped lang="postcss">
+<style scoped>
 .fade-enter-active,
 .fade-leave-active {
   @apply transition-opacity;

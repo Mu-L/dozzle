@@ -16,16 +16,28 @@ export function isObject(value: any): value is Record<string, any> {
 }
 
 export function flattenJSON(obj: Record<string, any>, path: string[] = []) {
-  const result: Record<string, any> = {};
-  Object.keys(obj).forEach((key) => {
+  const map = flattenJSONToMap(obj);
+  const result = {} as Record<string, any>;
+  for (const [key, value] of map) {
+    result[key.join(".")] = value;
+  }
+  return result;
+}
+
+export function flattenJSONToMap(obj: Record<string, any>, path: string[] = []): Map<string[], any> {
+  const result = new Map<string[], any>();
+  for (const key of Object.keys(obj)) {
     const value = obj[key];
     const newPath = path.concat(key);
     if (isObject(value)) {
-      Object.assign(result, flattenJSON(value, newPath));
+      for (const [k, v] of flattenJSONToMap(value, newPath)) {
+        result.set(k, v);
+      }
     } else {
-      result[newPath.join(".")] = value;
+      result.set(newPath, value);
     }
-  });
+  }
+
   return result;
 }
 
@@ -50,4 +62,41 @@ export function useExponentialMovingAverage<T extends Record<string, number>>(so
   });
 
   return ema;
+}
+
+interface UseSimpleRefHistoryOptions<T> {
+  capacity: number;
+  deep?: boolean;
+  initial?: T[];
+}
+
+export function useSimpleRefHistory<T>(source: Ref<T>, options: UseSimpleRefHistoryOptions<T>) {
+  const { capacity, deep = true, initial = [] as T[] } = options;
+  const history = ref<T[]>(initial) as Ref<T[]>;
+
+  watch(
+    source,
+    (value) => {
+      history.value.push(value);
+      if (history.value.length > capacity) {
+        history.value.shift();
+      }
+    },
+    { deep },
+  );
+
+  const reset = ({ initial = [] }: Pick<UseSimpleRefHistoryOptions<T>, "initial">) => {
+    history.value = initial;
+  };
+
+  return { history, reset };
+}
+
+export function hashCode(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
 }

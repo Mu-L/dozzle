@@ -1,5 +1,5 @@
 <template>
-  <div :data-level="level" :data-position="position" class="mt-1.5 h-2.5 w-2.5 flex-none rounded-lg"></div>
+  <div :data-level="level" :data-position="position" class="mt-1.5 size-2.5 flex-none rounded-lg"></div>
 </template>
 <script lang="ts" setup>
 import { Position } from "@/models/LogEntry";
@@ -10,7 +10,8 @@ defineProps<{
 }>();
 </script>
 
-<style lang="postcss" scoped>
+<style scoped>
+@import "@/main.css" reference;
 [data-position="start"] {
   border-radius: 0.5em 0.5em 0 0;
   height: 70%;
@@ -32,23 +33,24 @@ defineProps<{
   margin-top: -0.4em;
   align-self: flex-start;
 }
-
+</style>
+<style>
+@import "@/main.css" reference;
 [data-level="debug"],
 [data-level="trace"] {
-  @apply bg-purple;
+  @apply !bg-purple;
 }
 
 [data-level="info"] {
-  @apply bg-green;
+  @apply !bg-green;
 }
 
 [data-level="error"],
 [data-level="fatal"] {
-  @apply bg-red;
+  @apply !bg-red;
 }
 
-[data-level="warn"],
-[data-level="warning"] {
-  @apply bg-orange;
+[data-level="warn"] {
+  @apply !bg-orange;
 }
 </style>

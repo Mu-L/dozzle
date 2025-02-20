@@ -3,12 +3,9 @@
   "type": "module",
   "name": "docs",
   "devDependencies": {
-    "@netlify/functions": "^2.3.0",
-    "@unocss/preset-typography": "^0.56.5",
-    "@unocss/reset": "^0.56.5",
-    "@unocss/transformer-directives": "^0.56.5",
-    "dozzle": "workspace:*",
-    "sitemap": "^7.1.1",
-    "unocss": "^0.56.5"
+    "dozzle": "workspace:*"
+  },
+  "dependencies": {
+    "@fontsource-variable/playfair-display": "^5.1.1"
   }
 }
